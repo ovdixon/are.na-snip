@@ -2,8 +2,20 @@
     "manifest_version": 3,
     "name": "Browser snipper for Are.na",
     "version": "1.0",
-    "permissions": ["contextMenus"],
+    "permissions": [
+        "contextMenus",
+        "activeTab",
+        "scripting",
+        "storage",
+        "tabs"
+    ],
     "background": {
         "service_worker": "background.js"
-    }
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["scripts/content-script.js"]
+        }
+    ]
 }
