@@ -1,85 +1,64 @@
-(function() {
-    let startX, startY, endX, endY;
-    let selectionDiv = null;
-    let dimDiv = null;
+function initSnip() {
+    document.body.style.cursor = 'crosshair';
+    document.querySelectorAll('*').forEach(el => {
+        el.style.cssText += 'cursor: crosshair !important;';
+    });
+    document.body.style.userSelect = 'none';
 
-    // Immediately enable selection upon script injection
-    enableSelection();
+    let snipBox = null;
+    let startX, startY;
 
-    function enableSelection() {
-        document.body.style.userSelect = 'none'; // Disable text selection
+    document.addEventListener('mousedown', (e) => {
+        e.preventDefault()
 
-        // Create and append the dimming div
-        dimDiv = document.createElement('div');
-        dimDiv.style.position = 'fixed';
-        dimDiv.style.top = '0';
-        dimDiv.style.left = '0';
-        dimDiv.style.width = '100%';
-        dimDiv.style.height = '100%';
-        dimDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // Semi-transparent black
-        dimDiv.style.zIndex = '9998'; // Below the selectionDiv
-        document.body.appendChild(dimDiv);
+        startX = e.clientX;
+        startY = e.clientY;
 
-        document.addEventListener('mousedown', handleMouseDown);
-        document.addEventListener('mouseup', handleMouseUp);
-    }
+        snipBox = document.createElement('div');
+        snipBox.style.position = 'fixed';
+        snipBox.style.left = `${startX}px`;
+        snipBox.style.top = `${startY}px`;
+        snipBox.style.width = '0';
+        snipBox.style.height = '0';
+        snipBox.style.border = '2px solid white';
+        snipBox.style.backgroundColor = 'rgba(200,200,200,0.5)';
+        snipBox.style.zIndex = '9999';
+        snipBox.style.boxSizing = 'border-box';
+        document.body.appendChild(snipBox);
+    });
 
-    function handleMouseDown(event) {
-        startX = event.clientX;
-        startY = event.clientY;
+    document.addEventListener('mousemove', (e) => {
+        if (!snipBox) return;
 
-        selectionDiv = document.createElement('div');
-        selectionDiv.style.position = 'absolute';
-        selectionDiv.style.border = '2px dashed red';
-        selectionDiv.style.zIndex = '9999'; // Above the dimDiv
-        selectionDiv.style.left = `${startX}px`;
-        selectionDiv.style.top = `${startY}px`;
+        let width = Math.abs(e.clientX - startX);
+        let height = Math.abs(e.clientY - startY);
+        let left = (e.clientX - startX < 0) ? e.clientX : startX;
+        let top = (e.clientY - startY < 0) ? e.clientY : startY;
 
-        document.body.appendChild(selectionDiv);
+        snipBox.style.width = `${width}px`;
+        snipBox.style.height = `${height}px`;
+        snipBox.style.left = `${left}px`;
+        snipBox.style.top = `${top}px`;
+    });
 
-        document.addEventListener('mousemove', handleMouseMove);
-    }
+    document.addEventListener('mouseup', () => {
+        if (snipBox) {
+            chrome.runtime.sendMessage('capture', (response) => {
+                if (response.screenshotUrl) {
+                    console.log('Screenshot URL:', response.screenshotUrl);
+                }
+            });
 
-    function handleMouseMove(event) {
-        endX = event.clientX;
-        endY = event.clientY;
-
-        const width = Math.abs(endX - startX);
-        const height = Math.abs(endY - startY);
-
-        // Adjust position if dragging left/upward
-        selectionDiv.style.left = `${Math.min(startX, endX)}px`;
-        selectionDiv.style.top = `${Math.min(startY, endY)}px`;
-
-        selectionDiv.style.width = `${width}px`;
-        selectionDiv.style.height = `${height}px`;
-    }
-
-    function handleMouseUp() {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mousedown', handleMouseDown);
-        document.removeEventListener('mouseup', handleMouseUp);
-
-        // Notify background script of the selected area
-        chrome.runtime.sendMessage({
-            action: 'capture',
-            selection: {
-                x: Math.min(startX, endX),
-                y: Math.min(startY, endY),
-                width: Math.abs(endX - startX),
-                height: Math.abs(endY - startY)
-            }
-        });
-
-        // Clean up
-        document.body.style.userSelect = '';
-        if (selectionDiv) {
-            selectionDiv.remove();
+            document.body.removeChild(snipBox);
+            snipBox = null;
+            document.body.style.userSelect = '';
+            document.body.style.cursor = 'initial'
+            document.querySelectorAll('*').forEach(el => {
+                el.style.cssText = el.style.cssText.replace('cursor: crosshair !important;', 'cursor: initial !important;');
+            });
         }
-        if (dimDiv) {
-            dimDiv.remove();
-        }
-    }
+    });
+}
 
-    // Rest of your content.js code
-})();
+
+initSnip();
