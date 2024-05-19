@@ -1,7 +1,5 @@
-# Are.na Snipping Browser Extension
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="icon/logo-grey.png">
-  <source media="(prefers-color-scheme: light)" srcset="icon/logo.png">
-  <img alt="Repo Logo" src="icon/logo-4x.png">
-</picture>
+<div align="center">
+  <img src="icon/logo.png" alt="Logo" />
+  <h1>Are.na Snip</h1>
+</div>
