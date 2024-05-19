@@ -1,14 +1,88 @@
 function initSnip() {
+    console.log("Init snip")
+    let snipBox = null;
+    let startX, startY;
+    let screenshotUrl = null;
+
+
     document.body.style.cursor = 'crosshair';
     document.querySelectorAll('*').forEach(el => {
         el.style.cssText += 'cursor: crosshair !important;';
     });
     document.body.style.userSelect = 'none';
 
-    let snipBox = null;
-    let startX, startY;
+    function handleMouseMove(e) {
+        if (!snipBox) return;
 
-    document.addEventListener('mousedown', (e) => {
+        let width = Math.abs(e.clientX - startX);
+        let height = Math.abs(e.clientY - startY);
+        let left = (e.clientX - startX < 0) ? e.clientX : startX;
+        let top = (e.clientY - startY < 0) ? e.clientY : startY;
+
+        snipBox.style.width = `${width}px`;
+        snipBox.style.height = `${height}px`;
+        snipBox.style.left = `${left}px`;
+        snipBox.style.top = `${top}px`;
+    }
+
+    function cropImage(img, rect) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            image.src = img;
+            image.onload = function () {
+                const canvas = document.createElement("canvas");
+                const scale = window.devicePixelRatio;
+    
+                canvas.width = rect.width * scale;
+                canvas.height = rect.height * scale;
+                const ctx = canvas.getContext("2d");
+    
+                ctx.drawImage(
+                    image,
+                    rect.left * scale,
+                    rect.top * scale,
+                    rect.width * scale,
+                    rect.height * scale,
+                    0,
+                    0,
+                    rect.width * scale,
+                    rect.height * scale
+                );
+    
+                const croppedImage = canvas.toDataURL();
+                resolve(croppedImage);
+            };
+            image.onerror = reject;
+        });
+    }
+
+    function handleMouseUp() {
+        console.log('Mouse up')
+        if (!snipBox) return;
+        const snipRect = {
+            left: parseInt(snipBox.style.left),
+            top: parseInt(snipBox.style.top),
+            width: parseInt(snipBox.style.width),
+            height: parseInt(snipBox.style.height)
+        };
+        document.body.removeChild(snipBox);
+
+        chrome.runtime.sendMessage({message: 'capture', rect: snipRect}, async (response) => {
+            if (response.imgSrc) {
+                let screenshotUrl = await cropImage(response.imgSrc, snipRect);
+                console.log(screenshotUrl)
+                chrome.runtime.sendMessage({message: 'crop', img: screenshotUrl}, (response) => {
+                    console.log(response)
+                })
+            }
+        });
+
+        snipBox = null;
+        cleanupAfterSnip();
+
+    }
+
+    function handleMouseDown(e) {
         e.preventDefault()
 
         startX = e.clientX;
@@ -25,40 +99,24 @@ function initSnip() {
         snipBox.style.zIndex = '9999';
         snipBox.style.boxSizing = 'border-box';
         document.body.appendChild(snipBox);
-    });
 
-    document.addEventListener('mousemove', (e) => {
-        if (!snipBox) return;
 
-        let width = Math.abs(e.clientX - startX);
-        let height = Math.abs(e.clientY - startY);
-        let left = (e.clientX - startX < 0) ? e.clientX : startX;
-        let top = (e.clientY - startY < 0) ? e.clientY : startY;
+    }
 
-        snipBox.style.width = `${width}px`;
-        snipBox.style.height = `${height}px`;
-        snipBox.style.left = `${left}px`;
-        snipBox.style.top = `${top}px`;
-    });
+    function cleanupAfterSnip() {
+        console.log('Cleanup after snip')
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.userSelect = '';
+        document.body.style.cursor = 'initial';
+        document.querySelectorAll('*').forEach(el => {
+            el.style.cssText = el.style.cssText.replace('cursor: crosshair !important;', '');
+        });
+    }
 
-    document.addEventListener('mouseup', () => {
-        if (snipBox) {
-            chrome.runtime.sendMessage('capture', (response) => {
-                if (response.screenshotUrl) {
-                    console.log('Screenshot URL:', response.screenshotUrl);
-                }
-            });
-
-            document.body.removeChild(snipBox);
-            snipBox = null;
-            document.body.style.userSelect = '';
-            document.body.style.cursor = 'initial'
-            document.querySelectorAll('*').forEach(el => {
-                el.style.cssText = el.style.cssText.replace('cursor: crosshair !important;', 'cursor: initial !important;');
-            });
-        }
-    });
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
 }
-
 
 initSnip();

@@ -1,0 +1,123 @@
+.material-symbols-outlined {
+    color: #5f6368;
+    font-variation-settings:
+        'FILL' 0,
+        'wght' 300,
+        'GRAD' 0,
+        'opsz' 24;
+}
+
+button {
+    height: 22px;
+}
+
+body,
+button,
+select {
+    font-size: 10px;
+    font-family: 'Helvetica', 'Arial', sans-serif;
+}
+
+#header {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    align-items: center;
+}
+
+#snip-container {
+    width: 172px;
+    display: flex;
+    flex-direction: column;
+    padding: 4px;
+    gap: 4px;
+}
+
+#image-container {
+    position: relative;
+}
+
+.preview {
+    min-height: 164px;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+#image-preview {
+    object-fit: cover;
+    display: none;
+    border: 1px solid;
+}
+
+#image-null {
+    border: 1px dashed lightgrey;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+    align-items: center;
+    color: lightgray;
+}
+
+#image-preview[src=""]+#image-null {
+    display: flex;
+}
+
+#image-preview[src]:not([src=""]) {
+    display: block;
+}
+
+#image-preview[src]:not([src=""])+#image-null {
+    display: none;
+}
+
+
+#channel-search {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    width: 100%;
+}
+
+#channel-search input {
+    width: 100%;
+    font-size: 10px;
+}
+
+#search-submit span {
+    font-size: 14px !important;
+}
+
+
+tr.selected {
+    background-color: #7289da;
+    color: white;
+}
+
+tr.selected span {
+    color: white;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+table, td {
+    border: 1px solid black;
+}
+
+td {
+    padding: 4px;
+    text-align: left;
+}
+
+td span {
+    font-size: 12px !important;
+}
+
+#save-button {
+    margin-top: 4px;
+    width: 100%;
+}

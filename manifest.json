@@ -2,17 +2,25 @@
     "manifest_version": 3,
     "name": "Browser snipper for Are.na",
     "version": "1.0",
+    "icons": {
+        "128": "icon/logo.png"
+      },
     "permissions": [
         "contextMenus",
         "activeTab",
         "scripting",
         "storage",
-        "tabs"
+        "tabs",
+        "identity"
+    ],
+    "host_permissions": [
+        "https://dev.are.na/*"
     ],
     "background": {
         "service_worker": "background.js"
     },
     "action": {
+        "default_title": "Are.na Snip",
         "default_popup": "popup/index.html"
     }
 }

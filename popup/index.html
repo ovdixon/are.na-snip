@@ -1,13 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <title>Are.na Snip</title>
 </head>
+
 <body>
-    <h2>Are.na Snip</h2>
-    <img id="screenshot" src="" alt="Screenshot" style="width: 200px; height: auto;">
+    <div id="header">
+        <h2>Are.na Snip</h2>
+    </div>
+    <div id="auth-container" class="container">
+        <button id="login">Login with Are.na</button>
+    </div>
+    <div id="snip-container">
+        <div id="image-container">
+            <img id="image-preview" class="preview" src="" alt="Screenshot">
+            <div id="image-null" class="preview">
+                <img src="../icon/logo-grey.png" height="40px">
+            </div>
+        </div>
+        <div id="channel-search">
+            <input id="search-input" type="text">
+            <button id="search-submit"><span class="material-symbols-outlined">search</span></button>
+        </div>
+        <table id="channels-table"></table>
+
+        <div id="snip-actions">
+            <button id="save-button">Save</button>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
+
 </html>

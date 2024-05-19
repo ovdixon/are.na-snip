@@ -1,9 +1,11 @@
 let screenshotUrl = null;
 
+
+
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
         id: "arenaSnip",
-        title: "Are.na Snip"
+        title: "Snip to Are.na"
     });
 });
 
@@ -16,26 +18,29 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     }
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log(message)
-    if (message === "capture") {
-        console.log('Capturing')
-        chrome.tabs.captureVisibleTab(null, {format: 'png'}, function(dataUrl) {
-            screenshotUrl = dataUrl;
-            sendResponse({screenshotUrl: dataUrl});
+chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+    if (req.message === "capture") {
+        chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 100 }, function (dataUrl) {
+            sendResponse({ imgSrc: dataUrl });
         });
     }
-    return true; 
+    return true;
 });
 
+chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+    if (req.message === "crop") {
+        console.log('Cropped img: ', req.img)
+        screenshotUrl = req.img
+    }
+    return true;
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Request stored capture')
     if (message === "requestScreenshot") {
         if (screenshotUrl) {
             sendResponse(screenshotUrl);
         } else {
-            sendResponse(null); 
+            sendResponse(null);
         }
     }
 });
