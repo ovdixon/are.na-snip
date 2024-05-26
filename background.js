@@ -1,6 +1,9 @@
 let screenshotUrl = null;
+let window;
 
-
+chrome.sidePanel
+  .setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error(error));
 
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
@@ -11,6 +14,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     if (info.menuItemId === "arenaSnip") {
+        window = tab.windowId
         chrome.scripting.executeScript({
             target: { tabId: tab.id },
             files: ["scripts/content-script.js"]
@@ -23,13 +27,14 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 100 }, function (dataUrl) {
             sendResponse({ imgSrc: dataUrl });
         });
+        chrome.sidePanel.open({windowId: window});
+
     }
     return true;
 });
 
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     if (req.message === "crop") {
-        console.log('Cropped img: ', req.img)
         screenshotUrl = req.img
     }
     return true;

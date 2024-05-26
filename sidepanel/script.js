@@ -1,5 +1,14 @@
+// Right click to snip
+// Or drag an image
+// Or just save this link
+// (https://some-link.com)
+
 let auth;
 let selectedChannels = new Set();
+
+document.getElementById('image-container').addEventListener('drop', (event) => {
+    console.log(event)
+})
 
 document.addEventListener('DOMContentLoaded', async function () {
     chrome.runtime.sendMessage('requestScreenshot', (response) => {
@@ -13,12 +22,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     auth = await chrome.storage.local.get('token') || null;
     document.getElementById('auth-container').style.display = !auth.token ? 'flex' : 'none';
     document.getElementById('snip-container').style.display = !auth.token ? 'none' : 'flex';
-
-    const user = await getUserDetails();
-    const channels = await getRecentChannels(user.id);
-
-    await populateChannelsTable(channels);
     
+    await getUserDetails()
+        .then(async (user) => {
+            await getRecentChannels(user.id);
+        })
+        .then((channels) => {
+            console.log(channels)
+            populateChannelsTable(channels)
+        })
+        .catch((err) => {
+            const toast = document.getElementById('toast');
+            toast.classList.toggle('error')
+            toast.innerText = err;
+            toast.style.display = 'block';
+        })
+
+
     document.getElementById('save-button').addEventListener('click', () => {
         const selectedIds = Array.from(selectedChannels);
         console.log('Selected channel IDs:', selectedIds);
@@ -41,7 +61,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     updateSaveButton();
 
-    
+
 });
 
 function updateSaveButton() {
@@ -65,19 +85,25 @@ async function getLocalToken(code) {
 }
 
 async function getUserDetails() {
-    const response = await fetch("https://api.are.na/v2/me", {
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${auth.token}`
-        },
-    });
+    try {
+        const response = await fetch("https://api.are.na/v2/me", {
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${auth.token}`
+            },
+        });
 
-    const data = await response.json();
-    return data;
+        const data = await response.json();
+        return data;
+    } catch (err) {
+        throw new Error('Fetching Are.na user profile.')
+    }
+
 }
 
 async function getRecentChannels(userId) {
-    const response = await fetch(`https://api.are.na/v2/users/${userId}/channels?per=5`, {
+    try {
+        const response = await fetch(`https://api.are.na/v2/users/${userId}/channels?per=5`, {
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${auth.token}`
@@ -85,6 +111,9 @@ async function getRecentChannels(userId) {
     });
     const data = await response.json();
     return data.channels;
+} catch (err) { 
+    throw new Error ('Fetching recent channels.')
+}
 }
 
 async function searchChannels(query) {
@@ -105,7 +134,7 @@ async function populateChannelsTable(channels) {
     channels.forEach(channel => {
         const tr = document.createElement('tr');
         if (selectedChannels.has(channel.id)) tr.classList.add('selected');
-        tr.dataset.channelId = channel.id; 
+        tr.dataset.channelId = channel.id;
         tr.innerHTML = `
           <td class="name">${channel.user.full_name} / ${channel.title}</td>
           <td>${channel.open ? '' : '<span class="material-symbols-outlined">lock</span>'}</td>
@@ -120,7 +149,7 @@ async function populateChannelsTable(channels) {
             updateSaveButton();
         });
         channelsTable.append(tr);
-        
+
     });
 }
 
