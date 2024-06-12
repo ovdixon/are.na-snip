@@ -9,8 +9,9 @@
 
 :root {
     --light-colour-black: #000000;
-    --light-colour-grey-light: #d3d3d3;
-    --light-colour-grey-mid:  #acacac;
+    --light-colour-grey-light: #e9e9e9;
+    --light-colour-grey-mid:  #adadad;
+    --light-colour-grey-dark: #767676;
 
     --font-family: 'Helvetica', 'Arial', sans-serif;
     --font-size-xSmall: 10px;
@@ -59,13 +60,13 @@ p {
 }
 
 .preview {
-    min-height: 300px;
     width: 100%;
     margin-bottom: 8px;
+    height: 300px;
 }
 
 #image-preview {
-    object-fit: cover;
+    object-fit: contain;
     display: none;
     border: 1px solid;
 }
@@ -73,11 +74,11 @@ p {
 #image-null {
     color: var(--light-colour-grey-mid);
     border: 1px dashed var(--light-colour-grey-light);
-    height: 100%;
     display: flex;
     flex-direction: column;
     gap: 4px;
     justify-content: center;
+    align-items: center;
 }
 
 #image-null p { 
@@ -85,9 +86,15 @@ p {
     line-height: var(--font-lineHeight-body);
 }
 
+#image-null img {
+    width: 80px;
+    height: auto;
+}
+
 
 #image-preview[src=""]+#image-null {
     display: flex;
+    object-fit: contain;
 }
 
 #image-preview[src]:not([src=""]) {
@@ -106,21 +113,25 @@ p {
     justify-content: space-between;
     gap: 4px;
     width: 100%;
+    height: 32px;
 }
 
 #channel-search input {
     width: 100%;
-    font-size: 10px;
 }
 
 #search-submit span {
     font-size: 14px !important;
 }
 
+#search-submit:disabled span{
+    color: rgba(16, 16, 16, 0.3);
+}
+
 
 tr.selected {
-    background-color: #7289da;
-    color: white;
+    background-color: var(--light-colour-grey-light);
+
 }
 
 tr.selected span {
@@ -132,23 +143,42 @@ table {
     width: 100%;
 }
 
-table, td {
-    border: 1px solid black;
+table, td{
+    border: 1px solid var(--light-colour-grey-dark);
+    border-radius: 2px;
 }
 
 td {
-    padding: 4px;
+    padding: 8px;
     text-align: left;
+    border-right: none;
+    border-left: none;
 }
 
 td span {
     font-size: 12px !important;
 }
 
+.channel-status {
+    text-transform: uppercase;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.channel-status.public {
+    color: green;
+}
+
+.channel-status.private {
+    color: red;
+}
+
 #save-button {
     margin-top: 4px;
     width: 100%;
+    height: 32px;
 }
+
 
 #toast {
     height: 24px;

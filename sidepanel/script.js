@@ -6,9 +6,7 @@
 let auth;
 let selectedChannels = new Set();
 
-document.getElementById('image-container').addEventListener('drop', (event) => {
-    console.log(event)
-})
+document.getElementById('page-link').innerText = window.location.href.slice(0, 30)
 
 document.addEventListener('DOMContentLoaded', async function () {
     chrome.runtime.sendMessage('requestScreenshot', (response) => {
@@ -19,17 +17,25 @@ document.addEventListener('DOMContentLoaded', async function () {
             console.log('No screenshot available');
         }
     });
+
+    chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+        if (req.message === 'crop') {
+            console.log(req)
+            document.getElementById('image-preview').src = req.img;
+        }
+        return true;
+    });
     auth = await chrome.storage.local.get('token') || null;
+    console.log(auth)
     document.getElementById('auth-container').style.display = !auth.token ? 'flex' : 'none';
     document.getElementById('snip-container').style.display = !auth.token ? 'none' : 'flex';
-    
+
     await getUserDetails()
         .then(async (user) => {
-            await getRecentChannels(user.id);
-        })
-        .then((channels) => {
-            console.log(channels)
-            populateChannelsTable(channels)
+            await getRecentChannels(user.id)
+                .then((channels) => {
+                    if (channels) populateChannelsTable(channels)
+                })
         })
         .catch((err) => {
             const toast = document.getElementById('toast');
@@ -39,10 +45,9 @@ document.addEventListener('DOMContentLoaded', async function () {
         })
 
 
-    document.getElementById('save-button').addEventListener('click', () => {
+    document.getElementById('save-button').addEventListener('click', async () => {
         const selectedIds = Array.from(selectedChannels);
-        console.log('Selected channel IDs:', selectedIds);
-        //handleSelectedChannels(selectedIds);
+        await handleSelectedChannels(selectedIds);
     });
 
     document.getElementById('search-submit').addEventListener('click', async () => {
@@ -70,6 +75,21 @@ function updateSaveButton() {
     saveButton.textContent = selectedChannels.size === 0 ? 'Select a channel above' : `Save to ${selectedChannels.size} channels`;
 
 }
+
+document.getElementById('image-null').ondragover = (ev) => {
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = "move";
+}
+
+document.getElementById('image-null').ondrop = (ev) => {
+    ev.preventDefault();
+    const droppedImg = ev.dataTransfer.getData("text/plain");
+    document.getElementById('image-preview').src = droppedImg;
+}
+
+document.getElementById('search-input').addEventListener('input', function () {
+    document.getElementById('search-submit').disabled = !this.value;
+});
 
 async function getLocalToken(code) {
     const res = await fetch('http://localhost:3000/auth', {
@@ -104,16 +124,17 @@ async function getUserDetails() {
 async function getRecentChannels(userId) {
     try {
         const response = await fetch(`https://api.are.na/v2/users/${userId}/channels?per=5`, {
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${auth.token}`
-        },
-    });
-    const data = await response.json();
-    return data.channels;
-} catch (err) { 
-    throw new Error ('Fetching recent channels.')
-}
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${auth.token}`
+            },
+        });
+        console.log(response.body)
+        const data = await response.json();
+        return data.channels;
+    } catch (err) {
+        throw new Error('Fetching recent channels.')
+    }
 }
 
 async function searchChannels(query) {
@@ -132,12 +153,13 @@ async function populateChannelsTable(channels) {
     const channelsTable = document.getElementById('channels-table');
     channelsTable.innerHTML = '';
     channels.forEach(channel => {
+        console.log(channel)
         const tr = document.createElement('tr');
         if (selectedChannels.has(channel.id)) tr.classList.add('selected');
         tr.dataset.channelId = channel.id;
         tr.innerHTML = `
-          <td class="name">${channel.user.full_name} / ${channel.title}</td>
-          <td>${channel.open ? '' : '<span class="material-symbols-outlined">lock</span>'}</td>
+          <td class="channel-name">${channel.user.full_name} / ${channel.title}</td>
+          <td class="channel-status ${channel.status}">${channel.status}</td>
         `;
         tr.addEventListener('click', () => {
             tr.classList.toggle('selected');
@@ -151,6 +173,29 @@ async function populateChannelsTable(channels) {
         channelsTable.append(tr);
 
     });
+}
+
+async function handleSelectedChannels(channels) {
+    try {
+        channels.forEach(async (channelId) => {
+            const response = await fetch(`https://api.are.na/v2/channels/${channelId}/blocks`, {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${auth.token}`
+                },
+                body: JSON.stringify({
+                    "title": document.title,
+                    "source": document.getElementById('image-preview').src
+                })
+            });
+            console.log(response)
+        }
+        )
+
+    } catch (err) {
+        throw new Error('Saving to selected channels.')
+    }
 }
 
 
