@@ -1,4 +1,7 @@
-# Are.na Snip
+<div align="center">
+  <h1>Are.na Snip</h1>
+  <img src="img/logo.png" alt="Image description" width="160"/>
+</div>
 
 This Chrome extension, built with Manifest V3, includes features that expand upon the official Are.na browser extension.
 
