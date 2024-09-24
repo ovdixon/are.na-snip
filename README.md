@@ -21,3 +21,13 @@ Due to limitations in the official Are.na API (which doesn't support direct imag
 2. The image is uploaded to the R2 bucket.
 3. A pre-signed fetch URL is generated.
 4. The URL is passed to Are.na's "post block" endpoint, allowing you to post the image.
+
+## Usage
+
+To sideload this extension in Chrome, follow these steps:
+
+1. Download or clone the repository to your local machine.
+2. Open Chrome and navigate to `chrome://extensions/`.
+3. Enable "Developer mode" by toggling the switch in the upper right corner.
+4. Click on "Load unpacked" and select the directory where the extension files are located.
+5. The extension will now be loaded into Chrome, and you can start using it.
