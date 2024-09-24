@@ -3,7 +3,7 @@
     "name": "Are.na Snip",
     "version": "1.0",
     "icons": {
-        "128": "icon/logo.png"
+        "128": "img/logo.png"
       },
     "permissions": [
         "contextMenus",
@@ -15,12 +15,14 @@
         "sidePanel"
     ],
     "host_permissions": [
-        "https://dev.are.na/*"
+        "https://dev.are.na/*",
+        "https://api.are.na/v2/*",
+        "https://arena-mv3-auth.ovdixon.workers.dev/*"
     ],
     "background": {
-        "service_worker": "background.js"
+        "service_worker": "js/background.js"
     },
     "side_panel": {
-        "default_path": "sidepanel/index.html"
+        "default_path": "sidepanel.html"
       }
 }
