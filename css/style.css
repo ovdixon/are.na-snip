@@ -89,6 +89,8 @@ body {
   align-items: center;
   padding: 16px;
   word-break: break-all;
+  height: 300px;
+  overflow: auto;
 }
 
 #image-null p, #auth-container p {
