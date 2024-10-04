@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         if (req.message === 'crop') {
             block = { type: 'image-crop', source: req.img };
+            document.getElementById("image-null").style.display = "none";
+            document.getElementById("image-preview").style.display = "block";
             document.getElementById('image-preview').src = req.img;
         } else if (req.message === 'add') {
             console.log(req.target)
@@ -40,12 +42,6 @@ document.addEventListener('DOMContentLoaded', async function () {
                 .then((channels) => {
                     if (channels) populateChannelsTable(channels)
                 })
-        })
-        .catch((err) => {
-            const toast = document.getElementById('toast');
-            toast.classList.toggle('error')
-            toast.innerText = err;
-            toast.style.display = 'block';
         })
 
 
@@ -94,13 +90,9 @@ function updateSaveButton() {
     saveButton.textContent = selectedChannels.size === 0 ? 'Select a channel above' : `Save to ${selectedChannels.size} channels`;
 }
 
-document.getElementById('image-null').ondragover = handleDragEvent;
+document.getElementById('image-container').ondragover = handleDragEvent;
 
-document.getElementById('image-null').ondrop = handleDropEvent;
-
-document.getElementById('image-preview').ondragover = handleDragEvent
-
-document.getElementById('image-preview').ondrop = handleDropEvent;
+document.getElementById('image-container').ondrop = handleDropEvent;
 
 document.getElementById('search-input').addEventListener('input', function () {
     document.getElementById('search-submit').disabled = !this.value;
@@ -144,7 +136,6 @@ async function getRecentChannels(userId) {
                 Authorization: `Bearer ${auth.token}`
             },
         });
-        console.log(response.body)
         const data = await response.json();
         return data.channels;
     } catch (err) {
@@ -225,24 +216,30 @@ async function handleDragEvent(ev) {
 
 async function handleAddEvent(target) {
     if (target.mediaType === 'image') {
+        console.log(target.srcUrl)
         block = { type: 'image', source: target.srcUrl };
+        document.getElementById("image-null").style.display = "none";
+        document.getElementById("image-preview").style.display = "block";
         document.getElementById('image-preview').src = target.srcUrl;
-    } else if (target.linkUrl) {
-        block = { type: 'link', source: target.linkUrl };
-        document.getElementById('image-null').textContent = target.linkUrl;
-    } else if (target.selectionText) {
-        block = { type: 'text', source: target.selectionText };
-        document.getElementById('image-null').textContent = target.selectionText;
     } else {
-        block = { type: 'link', source: target.pageUrl };
-        document.getElementById('image-null').textContent = target.pageUrl;
+        document.getElementById("image-null").style.display = "block";
+        document.getElementById("image-preview").style.display = "none";
+        if (target.linkUrl) {
+            block = { type: 'link', source: target.linkUrl };
+            document.getElementById('image-null').textContent = target.linkUrl;
+        } else if (target.selectionText) {
+            block = { type: 'text', source: target.selectionText };
+            document.getElementById('image-null').textContent = target.selectionText;
+        } else {
+            block = { type: 'link', source: target.pageUrl };
+            document.getElementById('image-null').textContent = target.pageUrl;
+        }
     }
 
 }
 
 async function handleDropEvent(ev) {
     ev.preventDefault();
-
     const data = ev.dataTransfer.items;
     for (let i = 0; i < data.length; i++) {
         if (data[i].kind === "file" && data[i].type.match("^image/")) {
@@ -257,6 +254,9 @@ async function handleDropEvent(ev) {
     for (let i = 0; i < data.length; i++) {
         if (data[i].kind === "string" && data[i].type.match("^text/uri-list")) {
             data[i].getAsString((uriString) => {
+                console.log(uriString);
+                document.getElementById("image-null").style.display = "block";
+                document.getElementById("image-preview").style.display = "none";
                 document.getElementById("image-null").textContent = uriString;
                 block = { type: 'link', source: uriString };
             });
@@ -267,7 +267,10 @@ async function handleDropEvent(ev) {
     for (let i = 0; i < data.length; i++) {
         if (data[i].kind === "string" && data[i].type.match("^text/plain")) {
             data[i].getAsString((textString) => {
+                console.log(textString);
                 block = { type: 'text', source: textString };
+                document.getElementById("image-null").style.display = "block";
+                document.getElementById("image-preview").style.display = "none";
                 document.getElementById("image-null").textContent = textString;
             });
             return;
@@ -316,7 +319,7 @@ async function handleSelectedChannels(channels) {
             const { url, key } = await getUploadUrl();
             await uploadFile(block.source, url);
             source = await getFetchUrl(key);
-        } else if (block.type === 'link') {
+        } else if (block.type === 'link' || block.type === 'image' ) {
             source = block.source
         } else {
             content = block.source
@@ -351,6 +354,7 @@ async function handleSelectedChannels(channels) {
 document.getElementById('login').addEventListener('click', async () => {
     const clientId = 'xGd8YeYsshg6UtisCIpJr3JT_ieOAADuJbACtluzhMw'
     const redirectUri = encodeURIComponent(chrome.identity.getRedirectURL());
+    console.log(chrome.identity.getRedirectURL())
     const authUrl = `https://dev.are.na/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
     chrome.identity.launchWebAuthFlow({
         url: authUrl,
@@ -363,10 +367,19 @@ document.getElementById('login').addEventListener('click', async () => {
         const url = new URL(redirectUrl);
         const code = url.searchParams.get('code');
         const token = await getLocalToken(code);
+        auth = { token: token };
         if (token) chrome.storage.local.set({ token: token })
-            .then(() => {
+            .then(async () => {
                 document.getElementById('auth-container').style.display = 'none';
                 document.getElementById('snip-container').style.display = 'flex';
+                await getUserDetails()
+                    .then(async (user) => {
+                        await getRecentChannels(user.id)
+                            .then((channels) => {
+                                if (channels) populateChannelsTable(channels)
+                            })
+                    })
+
             });
         return false;
 

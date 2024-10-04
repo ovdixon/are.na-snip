@@ -5,9 +5,6 @@ function initSnip() {
     let isDragging = false;
 
     document.body.style.cursor = 'crosshair';
-    document.querySelectorAll('*').forEach(el => {
-        el.style.cssText += 'cursor: crosshair !important;';
-    });
     document.body.style.userSelect = 'none';
 
     snipOverlay = document.createElement('div');
@@ -110,10 +107,8 @@ function initSnip() {
             document.body.removeChild(snipOverlay);
             snipOverlay = null;
         }
-        document.body.style.cursor = 'auto';
-        document.querySelectorAll('*').forEach(el => {
-            el.style.cursor = '';
-        });
+        document.body.style.cursor = 'default';
+        document.body.style.userSelect = 'auto';
 
         document.removeEventListener('mousedown', handleMouseDown);
         document.removeEventListener('mouseup', handleMouseUp);
