@@ -1,0 +1,28 @@
+{
+    "manifest_version": 3,
+    "name": "Are.na Snip",
+    "version": "1.1",
+    "icons": {
+        "128": "img/logo.png"
+      },
+    "permissions": [
+        "contextMenus",
+        "activeTab",
+        "scripting",
+        "storage",
+        "tabs",
+        "identity",
+        "sidePanel"
+    ],
+    "host_permissions": [
+        "https://dev.are.na/*",
+        "https://api.are.na/v2/*",
+        "https://arena-mv3-auth.ovdixon.workers.dev/*"
+    ],
+    "background": {
+        "service_worker": "js/background.js"
+    },
+    "side_panel": {
+        "default_path": "sidepanel.html"
+      }
+}
