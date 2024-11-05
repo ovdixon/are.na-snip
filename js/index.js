@@ -210,6 +210,7 @@ async function getFetchUrl(key) {
 
 }
 async function handleDragEvent(ev) {
+    console.log(ev)
     ev.preventDefault();
     ev.dataTransfer.dropEffect = "move";
 };
@@ -241,12 +242,19 @@ async function handleAddEvent(target) {
 async function handleDropEvent(ev) {
     ev.preventDefault();
     const data = ev.dataTransfer.items;
+    console.log(data)
+    console.log(ev)
     for (let i = 0; i < data.length; i++) {
         if (data[i].kind === "file" && data[i].type.match("^image/")) {
             const f = data[i].getAsFile();
             const imgURL = URL.createObjectURL(f);
+            let html = ev.dataTransfer.getData('text/html');
+            let src = new DOMParser().parseFromString(html, "text/html")
+                .querySelector('img').src;
+            document.getElementById("image-null").style.display = "none";
+            document.getElementById("image-preview").style.display = "block";
             document.getElementById("image-preview").src = imgURL;
-            block = { type: 'image', source: imgURL };
+            block = { type: 'image', source: src };
             return;
         }
     }
@@ -319,7 +327,7 @@ async function handleSelectedChannels(channels) {
             const { url, key } = await getUploadUrl();
             await uploadFile(block.source, url);
             source = await getFetchUrl(key);
-        } else if (block.type === 'link' || block.type === 'image' ) {
+        } else if (block.type === 'link' || block.type === 'image') {
             source = block.source
         } else {
             content = block.source
