@@ -106,6 +106,7 @@ async function getLocalToken(code) {
         },
         body: JSON.stringify({ code: code })
     });
+    console.log(res)
     const data = await res.json();
     return data.access_token;
 
@@ -394,4 +395,24 @@ document.getElementById('login').addEventListener('click', async () => {
     });
 })
 
+document.addEventListener('DOMContentLoaded', () => {
+    const btn   = document.getElementById('menu-button');
+    const menu  = document.getElementById('options-menu');
+  
+    const toggleMenu = (show) => {
+      btn.setAttribute('aria-expanded', show);
+      menu.classList.toggle('hidden', !show);
+    };
+  
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();                 
+      toggleMenu(menu.classList.contains('hidden'));
+    });
+  
+    window.addEventListener('click', () => toggleMenu(false));
+  
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') toggleMenu(false);
+    });
+  });
 

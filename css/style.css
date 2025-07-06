@@ -33,13 +33,6 @@ body {
   font-size: var(--font-size-xSmall);
 }
 
-* {
-  font-family: var(--font-family);
-  color: var(--colour-light-black);
-  line-height: var(--font-lineHeight-body);
-  font-size: var(--font-size-xSmall);
-}
-
 
 
 #header {

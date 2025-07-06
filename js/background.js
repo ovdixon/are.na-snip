@@ -1,10 +1,6 @@
 let screenshotUrl = null;
 let window;
 
-chrome.sidePanel
-    .setPanelBehavior({ openPanelOnActionClick: true })
-    .catch((error) => console.error(error));
-
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
         id: "arenaSnip",
