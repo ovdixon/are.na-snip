@@ -21,7 +21,8 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     window = tab.windowId
-    chrome.sidePanel.open({ windowId: window });
+    //chrome.sidePanel.open({ windowId: window });
+    //chrome.action.openPopup()
     switch (info.menuItemId) {
         case 'arenaSnip':
             chrome.scripting.executeScript({

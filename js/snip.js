@@ -1,5 +1,4 @@
 function initSnip() {
-    console.log("Init snip");
     let startX, startY, endX, endY;
     let snipOverlay = null;
     let isDragging = false;
