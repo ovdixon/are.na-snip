@@ -98,18 +98,36 @@ document.getElementById('search-input').addEventListener('input', function () {
     document.getElementById('search-submit').disabled = !this.value;
 });
 
-async function getLocalToken(code) {
-    const res = await fetch('https://arena-mv3-auth.ovdixon.workers.dev/auth', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ code: code })
+function getSelfInfo() {
+    return new Promise((resolve, reject) => {
+        chrome.management.getSelf((extensionInfo) => {
+            if (chrome.runtime.lastError) {
+                return reject(chrome.runtime.lastError);
+            }
+            resolve(extensionInfo);
+        });
     });
-    console.log(res)
-    const data = await res.json();
-    return data.access_token;
+}
 
+async function getLocalToken(code) {
+    try {
+        const self = await getSelfInfo();
+        const url = `https://arena-mv3-auth.ovdixon.workers.dev/${self.installType === 'development' ? 'auth-dev' : 'auth'}`;
+
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ code: code })
+        });
+
+        const data = await res.json();
+        return data.access_token;
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 }
 
 async function getUserDetails() {
@@ -363,7 +381,6 @@ async function handleSelectedChannels(channels) {
 document.getElementById('login').addEventListener('click', async () => {
     const clientId = 'xGd8YeYsshg6UtisCIpJr3JT_ieOAADuJbACtluzhMw'
     const redirectUri = encodeURIComponent(chrome.identity.getRedirectURL());
-    console.log(chrome.identity.getRedirectURL())
     const authUrl = `https://dev.are.na/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code`;
     chrome.identity.launchWebAuthFlow({
         url: authUrl,
@@ -377,6 +394,7 @@ document.getElementById('login').addEventListener('click', async () => {
         const code = url.searchParams.get('code');
         const token = await getLocalToken(code);
         auth = { token: token };
+        console.log({ token: token })
         if (token) chrome.storage.local.set({ token: token })
             .then(async () => {
                 document.getElementById('auth-container').style.display = 'none';
@@ -396,23 +414,23 @@ document.getElementById('login').addEventListener('click', async () => {
 })
 
 document.addEventListener('DOMContentLoaded', () => {
-    const btn   = document.getElementById('menu-button');
-    const menu  = document.getElementById('options-menu');
-  
+    const btn = document.getElementById('menu-button');
+    const menu = document.getElementById('options-menu');
+
     const toggleMenu = (show) => {
-      btn.setAttribute('aria-expanded', show);
-      menu.classList.toggle('hidden', !show);
+        btn.setAttribute('aria-expanded', show);
+        menu.classList.toggle('hidden', !show);
     };
-  
+
     btn.addEventListener('click', (e) => {
-      e.stopPropagation();                 
-      toggleMenu(menu.classList.contains('hidden'));
+        e.stopPropagation();
+        toggleMenu(menu.classList.contains('hidden'));
     });
-  
+
     window.addEventListener('click', () => toggleMenu(false));
-  
+
     window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') toggleMenu(false);
+        if (e.key === 'Escape') toggleMenu(false);
     });
-  });
+});
 
