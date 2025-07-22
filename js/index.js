@@ -10,13 +10,12 @@ let block;
 document.addEventListener('DOMContentLoaded', async function () {
 
     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
-    document.getElementById('page-link').innerText = tab.url.slice(0, 30)
     block = { type: 'link', source: tab.url };
 
     chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
         if (req.message === 'crop') {
             block = { type: 'image-crop', source: req.img };
-            document.getElementById("image-null").style.display = "none";
+            document.getElementById("start-snip").style.display = "none";
             document.getElementById("image-preview").style.display = "block";
             document.getElementById('image-preview').src = req.img;
         } else if (req.message === 'add') {
@@ -33,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     auth = await chrome.storage.local.get('token') || null;
+    console.log(auth.token)
     document.getElementById('auth-container').style.display = !auth.token ? 'flex' : 'none';
     document.getElementById('snip-container').style.display = !auth.token ? 'none' : 'flex';
 
@@ -87,15 +87,24 @@ document.addEventListener('DOMContentLoaded', async function () {
 function updateSaveButton() {
     const saveButton = document.getElementById('save-button');
     saveButton.disabled = selectedChannels.size === 0;
-    saveButton.textContent = selectedChannels.size === 0 ? 'Select a channel above' : `Save to ${selectedChannels.size} channels`;
+    saveButton.textContent = selectedChannels.size === 0 ? 'Select a channel' : `Save to ${selectedChannels.size} channels`;
 }
 
-document.getElementById('image-container').ondragover = handleDragEvent;
-
-document.getElementById('image-container').ondrop = handleDropEvent;
 
 document.getElementById('search-input').addEventListener('input', function () {
     document.getElementById('search-submit').disabled = !this.value;
+});
+
+document.getElementById('start-snip').addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+    if (!tab || !tab.id) return;
+
+    await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ['js/snip.js']
+    });
+    window.close();
 });
 
 function getSelfInfo() {
@@ -149,7 +158,7 @@ async function getUserDetails() {
 
 async function getRecentChannels(userId) {
     try {
-        const response = await fetch(`https://api.are.na/v2/users/${userId}/channels?per=5`, {
+        const response = await fetch(`https://api.are.na/v2/users/${userId}/channels?per=3`, {
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${auth.token}`
@@ -163,7 +172,7 @@ async function getRecentChannels(userId) {
 }
 
 async function searchChannels(query) {
-    const response = await fetch(`https://api.are.na/v2/search/channels/?q=${query}&per=5`, {
+    const response = await fetch(`https://api.are.na/v2/search/channels/?q=${query}&per=3`, {
         headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${auth.token}`
@@ -174,6 +183,14 @@ async function searchChannels(query) {
 
 }
 
+function getStatusDotClass(status) {
+    switch ((status ?? '').toLowerCase()) {
+        case 'public': return 'fill-green-500';
+        case 'private': return 'fill-red-500';
+        case 'closed': return 'fill-gray-400';
+    }
+}
+
 async function populateChannelsTable(channels) {
     const channelsTable = document.getElementById('channels-table');
     channelsTable.innerHTML = '';
@@ -182,18 +199,33 @@ async function populateChannelsTable(channels) {
         const tr = document.createElement('tr');
         if (selectedChannels.has(channel.id)) tr.classList.add('selected');
         tr.dataset.channelId = channel.id;
+        const dotClass = getStatusDotClass(channel.status);
+
         tr.innerHTML = `
-          <td class="channel-name">${channel.user.full_name} / ${channel.title}</td>
-          <td class="channel-status ${channel.status}">${channel.status}</td>
+        <td
+            class="px-2 py-2 text-xs text-gray-500 max-w-[128px] truncate"
+            title="${channel.user.full_name} / ${channel.title}"
+        >
+            ${channel.user.full_name} / ${channel.title}
+        </td>
+
+        <td class="px-2 py-2 text-xs whitespace-nowrap">
+            <svg class="size-1.5 ${dotClass}" viewBox="0 0 6 6" aria-hidden="true">
+            <circle cx="3" cy="3" r="3" />
+            </svg>
+        </td>
         `;
         tr.addEventListener('click', () => {
-            tr.classList.toggle('selected');
-            if (tr.classList.contains('selected')) {
-                selectedChannels.add(channel.id)
+            tr.classList.toggle('bg-gray-100');
+
+            if (tr.classList.contains('bg-gray-100')) {
+                console.log(`Selected channel: ${channel.id}`);
+                selectedChannels.add(channel.id);
             } else {
-                selectedChannels.delete(channel.id)
+                selectedChannels.delete(channel.id);
             }
             updateSaveButton();
+
         });
         channelsTable.append(tr);
 
@@ -228,11 +260,6 @@ async function getFetchUrl(key) {
 
 
 }
-async function handleDragEvent(ev) {
-    console.log(ev)
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = "move";
-};
 
 async function handleAddEvent(target) {
     if (target.mediaType === 'image') {
@@ -258,55 +285,6 @@ async function handleAddEvent(target) {
 
 }
 
-async function handleDropEvent(ev) {
-    ev.preventDefault();
-    const data = ev.dataTransfer.items;
-    console.log(data)
-    console.log(ev)
-    for (let i = 0; i < data.length; i++) {
-        if (data[i].kind === "file" && data[i].type.match("^image/")) {
-            const f = data[i].getAsFile();
-            const imgURL = URL.createObjectURL(f);
-            let html = ev.dataTransfer.getData('text/html');
-            let src = new DOMParser().parseFromString(html, "text/html")
-                .querySelector('img').src;
-            document.getElementById("image-null").style.display = "none";
-            document.getElementById("image-preview").style.display = "block";
-            document.getElementById("image-preview").src = imgURL;
-            block = { type: 'image', source: src };
-            return;
-        }
-    }
-
-    for (let i = 0; i < data.length; i++) {
-        if (data[i].kind === "string" && data[i].type.match("^text/uri-list")) {
-            data[i].getAsString((uriString) => {
-                console.log(uriString);
-                document.getElementById("image-null").style.display = "block";
-                document.getElementById("image-preview").style.display = "none";
-                document.getElementById("image-null").textContent = uriString;
-                block = { type: 'link', source: uriString };
-            });
-            return;
-        }
-    }
-
-    for (let i = 0; i < data.length; i++) {
-        if (data[i].kind === "string" && data[i].type.match("^text/plain")) {
-            data[i].getAsString((textString) => {
-                console.log(textString);
-                block = { type: 'text', source: textString };
-                document.getElementById("image-null").style.display = "block";
-                document.getElementById("image-preview").style.display = "none";
-                document.getElementById("image-null").textContent = textString;
-            });
-            return;
-        }
-    }
-
-
-    console.log("Drop: Unknown");
-}
 
 document.getElementById('logout').addEventListener('click', async () => {
     chrome.storage.local.remove('token')
@@ -362,9 +340,7 @@ async function handleSelectedChannels(channels) {
                 body: JSON.stringify({
                     "source": source,
                     "content": content,
-                    "title": document.getElementById('title-input').value,
-                    "description": document.getElementById('description-input').value,
-
+                    "title": document.getElementById('title').value,
                 })
             });
             console.log(response)

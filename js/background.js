@@ -1,4 +1,3 @@
-let screenshotUrl = null;
 let window;
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -9,20 +8,13 @@ chrome.runtime.onInstalled.addListener(() => {
     });
     chrome.contextMenus.create({
         id: "arenaShot",
-        title: "Screenshot",
+        title: "Whole Page",
         contexts: ['all']
-    });
-    chrome.contextMenus.create({
-        id: "arenaAdd",
-        title: "Add",
-        contexts: ['image', 'link', 'page', 'selection'],
     });
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     window = tab.windowId
-    //chrome.sidePanel.open({ windowId: window });
-    //chrome.action.openPopup()
     switch (info.menuItemId) {
         case 'arenaSnip':
             chrome.scripting.executeScript({
@@ -30,14 +22,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
                 files: ["js/snip.js"]
             });
             break;
-        case 'arenaAdd':
-            chrome.runtime.sendMessage({message: 'add', target: info}, (response) => {
-                console.log(response);
-            });
-            break;
         case 'arenaShot':
-            chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 100 }, function (dataUrl) {
-                chrome.runtime.sendMessage({message: 'crop', img: dataUrl}, (response) => {
+            chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 100 }, async function (dataUrl) {
+                await chrome.action.openPopup({ windowId: window });
+                await chrome.runtime.sendMessage({message: 'crop', img: dataUrl}, (response) => {
                     console.log(response);
                 });
             });
@@ -48,7 +36,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     }
 });
 
-chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener(async (req, sender, sendResponse) => {
+    const { id: windowId } = await chrome.windows.getCurrent();
+    await chrome.action.openPopup({ windowId })
     if (req.message === "capture") {
         chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 100 }, function (dataUrl) {
             sendResponse({ imgSrc: dataUrl });
