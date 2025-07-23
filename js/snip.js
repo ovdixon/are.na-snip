@@ -79,7 +79,6 @@ function initSnip() {
 
     function handleMouseUp() {
         if (!isDragging) return;
-        
 
         const snipRect = {
             left: Math.min(startX, endX),

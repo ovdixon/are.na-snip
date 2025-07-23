@@ -4,6 +4,7 @@
 // (https://some-link.com)
 
 let auth;
+let tableChannels;
 let selectedChannels = new Set();
 let block;
 
@@ -40,7 +41,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         .then(async (user) => {
             await getRecentChannels(user.id)
                 .then((channels) => {
-                    if (channels) populateChannelsTable(channels)
+                    if (channels) {
+                        tableChannels = channels;
+                        populateChannelsTable(channels)
+                    }
                 })
         })
 
@@ -63,20 +67,36 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
+    document.getElementById('new-channel').addEventListener('click', async () => {
+        const channelName = document.getElementById('search-input').value.trim();
+        if (channelName) {
+            await createChannel(channelName)
+                .then(async (channel) => {
+                    tableChannels.unshift(channel);
+                    tableChannels.pop();
+                    await populateChannelsTable(tableChannels);
+                    document.getElementById('search-input').value = '';
+                })
+        }
+    });
+
     document.getElementById('search-submit').addEventListener('click', async () => {
         const query = document.getElementById('search-input').value;
         selectedChannels.clear();
         updateSaveButton();
         const channels = await searchChannels(query);
+        tableChannels = channels;
         await populateChannelsTable(channels);
     });
 
     document.getElementById('search-input').addEventListener('keydown', async (event) => {
+        console.log(event)
         if (event.key === 'Enter') {
             const query = event.target.value;
             selectedChannels.clear();
             updateSaveButton();
             const channels = await searchChannels(query);
+            tableChannels = channels;
             await populateChannelsTable(channels);
         }
     });
@@ -181,6 +201,22 @@ async function searchChannels(query) {
     const data = await response.json();
     return data.channels;
 
+}
+
+async function createChannel(name) {
+    const response = await fetch('https://api.are.na/v2/channels', {
+        method: 'POST',
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${auth.token}`
+        },
+        body: JSON.stringify({
+            title: name,
+            status: 'private'
+        })
+    });
+    const data = await response.json();
+    return data;
 }
 
 function getStatusDotClass(status) {
@@ -340,7 +376,6 @@ async function handleSelectedChannels(channels) {
                 body: JSON.stringify({
                     "source": source,
                     "content": content,
-                    "title": document.getElementById('title').value,
                 })
             });
             console.log(response)
@@ -379,7 +414,10 @@ document.getElementById('login').addEventListener('click', async () => {
                     .then(async (user) => {
                         await getRecentChannels(user.id)
                             .then((channels) => {
-                                if (channels) populateChannelsTable(channels)
+                                if (channels) {
+                                    tableChannels = channels;
+                                    populateChannelsTable(channels)
+                                }
                             })
                     })
 

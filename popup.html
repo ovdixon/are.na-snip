@@ -65,20 +65,26 @@
         <img id="image-preview" src="" alt="Screenshot"
             class="object-contain hidden w-full h-30 rounded-lg border-1 border-gray-300" />
 
-        <div class="mt-2 flex">
+                <div class="mt-2 flex">
             <div class="-mr-px grid grow grid-cols-1 focus-within:relative">
-                <input id="search-input" type="text" name="query" 
+                <input id="search-input" type="text" name="query"
                     class="col-start-1 row-start-1 block w-full rounded-l-md bg-white py-1 pr-3 pl-3 text-xs text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-zinc-600"
                     placeholder="Channels" />
             </div>
-            <button id="search-submit" type="button"
-                class="flex shrink-0 items-center gap-x-1.5 rounded-r-md bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 outline-1 -outline-offset-1 outline-gray-300 hover:bg-gray-50 focus:relative focus:outline-2 focus:-outline-offset-2 focus:outline-zinc-600">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-3.5">
+            <button id="new-channel" type="button" title="New Private Channel"
+                class="-ml-px flex shrink-0 items-center gap-x-1.5 bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 outline-1 -outline-offset-1 outline-gray-300 hover:bg-gray-50 focus:relative focus:outline-2 focus:-outline-offset-2 focus:outline-zinc-600">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3">
+                    <path
+                        d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
+                </svg>
+            </button>
+            <button id="search-submit" type="button" title="Search"
+                class="-ml-px flex shrink-0 items-center gap-x-1.5 rounded-r-md bg-white px-3 py-1.5 text-xs font-semibold text-gray-900 outline-1 -outline-offset-1 outline-gray-300 hover:bg-gray-50 focus:relative focus:outline-2 focus:-outline-offset-2 focus:outline-zinc-600">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="size-3">
                     <path fill-rule="evenodd"
-                        d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z"
+                        d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"
                         clip-rule="evenodd" />
                 </svg>
-
             </button>
         </div>
 
@@ -89,6 +95,10 @@
             class="rounded-sm bg-white px-2 py-1 text-xs font-semibold text-gray-900 shadow-xs ring-1 ring-gray-300 ring-inset hover:bg-gray-50">
             Save
         </button>
+
+        <a href="https://github.com/ovdixon/are.na-snip" target="_blank" rel="noopener noreferrer" class="block w-full mt-2 text-center text-xs text-gray-500 hover:text-gray-700 hover:underline">
+            Drop a ⭐ on GitHub!
+        </a>
 
     </div>
     <script src="js/index.js"></script>
