@@ -46,37 +46,6 @@ function initSnip() {
         isDragging = true;
     }
 
-    function cropImage(img, rect) {
-        return new Promise((resolve, reject) => {
-            const image = new Image();
-            image.src = img;
-            image.onload = function() {
-                const canvas = document.createElement("canvas");
-                const scale = window.devicePixelRatio;
-
-                canvas.width = rect.width * scale;
-                canvas.height = rect.height * scale;
-                const ctx = canvas.getContext("2d");
-
-                ctx.drawImage(
-                    image,
-                    rect.left * scale,
-                    rect.top * scale,
-                    rect.width * scale,
-                    rect.height * scale,
-                    0,
-                    0,
-                    rect.width * scale,
-                    rect.height * scale
-                );
-
-                const croppedImage = canvas.toDataURL();
-                resolve(croppedImage);
-            };
-            image.onerror = reject;
-        });
-    }
-
     function handleMouseUp() {
         if (!isDragging) return;
 
@@ -90,15 +59,7 @@ function initSnip() {
         isDragging = false;
         document.removeEventListener('mousemove', handleMouseMove);
         cleanupAfterSnip();
-
-        chrome.runtime.sendMessage({message: 'capture', rect: snipRect}, async (response) => {
-            if (response.imgSrc) {
-                let screenshotUrl = await cropImage(response.imgSrc, snipRect);
-                chrome.runtime.sendMessage({message: 'crop', img: screenshotUrl}, (response) => {
-                    console.log(response);
-                });
-            }
-        });
+        chrome.runtime.sendMessage({ message: 'startCrop', rect: snipRect });
     }
 
     function cleanupAfterSnip() {

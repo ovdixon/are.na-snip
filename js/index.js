@@ -1,34 +1,22 @@
-// Right click to snip
-// Or drag an image
-// Or just save this link
-// (https://some-link.com)
-
 let auth;
 let tableChannels;
 let selectedChannels = new Set();
 let block;
 
+
+// On Load
 document.addEventListener('DOMContentLoaded', async function () {
 
     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
     block = { type: 'link', source: tab.url };
 
-    chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-        if (req.message === 'crop') {
-            block = { type: 'image-crop', source: req.img };
+    chrome.runtime.sendMessage({ message: 'getCropData' }, async (response) => {
+        if (response && response.imgSrc && response.rect) {
+            const croppedUrl = await cropImage(response.imgSrc, response.rect);
+            block = { type: 'image-crop', source: croppedUrl };
             document.getElementById("start-snip").style.display = "none";
             document.getElementById("image-preview").style.display = "block";
-            document.getElementById('image-preview').src = req.img;
-        } else if (req.message === 'add') {
-            console.log(req.target)
-            handleAddEvent(req.target);
-        }
-        return true;
-    });
-
-    chrome.runtime.onMessage.addListener((message) => {
-        if (message.url) {
-            document.getElementById('page-link').innerText = message.url.slice(0, 30)
+            document.getElementById('image-preview').src = croppedUrl;
         }
     });
 
@@ -102,16 +90,27 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     updateSaveButton();
-});
 
-function updateSaveButton() {
-    const saveButton = document.getElementById('save-button');
-    saveButton.disabled = selectedChannels.size === 0;
-    saveButton.textContent = selectedChannels.size === 0 ? 'Select a channel' : `Save to ${selectedChannels.size} channels`;
-}
+    const btn = document.getElementById('menu-button');
+    const menu = document.getElementById('options-menu');
 
+    const toggleMenu = (show) => {
+        btn.setAttribute('aria-expanded', show);
+        menu.classList.toggle('hidden', !show);
+    };
 
-document.getElementById('search-input').addEventListener('input', function () {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleMenu(menu.classList.contains('hidden'));
+    });
+
+    window.addEventListener('click', () => toggleMenu(false));
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') toggleMenu(false);
+    });
+
+    document.getElementById('search-input').addEventListener('input', function () {
     document.getElementById('search-submit').disabled = !this.value;
 });
 
@@ -126,6 +125,59 @@ document.getElementById('start-snip').addEventListener('click', async () => {
     });
     window.close();
 });
+
+document.getElementById('logout').addEventListener('click', async () => {
+    chrome.storage.local.remove('token')
+        .then(() => {
+            document.getElementById('auth-container').style.display = 'flex';
+            document.getElementById('snip-container').style.display = 'none';
+        });
+    return false;
+})
+
+});
+
+
+
+// functions
+
+function cropImage(img, rect) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        image.src = img;
+        image.onload = function () {
+            const canvas = document.createElement("canvas");
+            const scale = window.devicePixelRatio;
+
+            canvas.width = rect.width * scale;
+            canvas.height = rect.height * scale;
+            const ctx = canvas.getContext("2d");
+
+            ctx.drawImage(
+                image,
+                rect.left * scale,
+                rect.top * scale,
+                rect.width * scale,
+                rect.height * scale,
+                0,
+                0,
+                rect.width * scale,
+                rect.height * scale
+            );
+
+            const croppedImage = canvas.toDataURL();
+            resolve(croppedImage);
+        };
+        image.onerror = reject;
+    });
+}
+
+function updateSaveButton() {
+    const saveButton = document.getElementById('save-button');
+    saveButton.disabled = selectedChannels.size === 0;
+    saveButton.textContent = selectedChannels.size === 0 ? 'Select a channel' : `Save to ${selectedChannels.size} channels`;
+}
+
 
 function getSelfInfo() {
     return new Promise((resolve, reject) => {
@@ -297,47 +349,6 @@ async function getFetchUrl(key) {
 
 }
 
-async function handleAddEvent(target) {
-    if (target.mediaType === 'image') {
-        console.log(target.srcUrl)
-        block = { type: 'image', source: target.srcUrl };
-        document.getElementById("image-null").style.display = "none";
-        document.getElementById("image-preview").style.display = "block";
-        document.getElementById('image-preview').src = target.srcUrl;
-    } else {
-        document.getElementById("image-null").style.display = "block";
-        document.getElementById("image-preview").style.display = "none";
-        if (target.linkUrl) {
-            block = { type: 'link', source: target.linkUrl };
-            document.getElementById('image-null').textContent = target.linkUrl;
-        } else if (target.selectionText) {
-            block = { type: 'text', source: target.selectionText };
-            document.getElementById('image-null').textContent = target.selectionText;
-        } else {
-            block = { type: 'link', source: target.pageUrl };
-            document.getElementById('image-null').textContent = target.pageUrl;
-        }
-    }
-
-}
-
-
-document.getElementById('logout').addEventListener('click', async () => {
-    chrome.storage.local.remove('token')
-        .then(() => {
-            document.getElementById('auth-container').style.display = 'flex';
-            document.getElementById('snip-container').style.display = 'none';
-        });
-    return false;
-})
-
-// Utility function to strip HTML tags from a string
-function stripHTML(html) {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    return div.textContent || div.innerText || '';
-}
-
 async function uploadFile(file, presignedUrl) {
     const blobResponse = await fetch(file);
     const blob = await blobResponse.blob();
@@ -420,31 +431,9 @@ document.getElementById('login').addEventListener('click', async () => {
                                 }
                             })
                     })
-
             });
         return false;
-
     });
 })
 
-document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('menu-button');
-    const menu = document.getElementById('options-menu');
-
-    const toggleMenu = (show) => {
-        btn.setAttribute('aria-expanded', show);
-        menu.classList.toggle('hidden', !show);
-    };
-
-    btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleMenu(menu.classList.contains('hidden'));
-    });
-
-    window.addEventListener('click', () => toggleMenu(false));
-
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') toggleMenu(false);
-    });
-});
 

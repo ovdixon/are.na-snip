@@ -1,4 +1,4 @@
-let window;
+let cropData = null; // Declare cropData in the global scope
 
 chrome.runtime.onInstalled.addListener(() => {
     chrome.contextMenus.create({
@@ -6,44 +6,28 @@ chrome.runtime.onInstalled.addListener(() => {
         title: "Are.na Snip",
         contexts: ['all']
     });
-
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-    window = tab.windowId
-    switch (info.menuItemId) {
-        case 'arenaSnip':
-            chrome.scripting.executeScript({
-                target: { tabId: tab.id },
-                files: ["js/snip.js"]
-            });
-            break;
-        default:
-            console.log('Invalid context menu item')
-            break;
-    }
-});
-
-chrome.runtime.onMessage.addListener(async (req, sender, sendResponse) => {
-    const { id: windowId } = await chrome.windows.getCurrent();
-    const lastFocusedWindow = await chrome.windows.getLastFocused();
-    if (lastFocusedWindow.id)
-        await chrome.windows.update(lastFocusedWindow.id, {
-            focused: true,
-        });
-    chrome.action.openPopup();
-    if (req.message === "capture") {
-        chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 100 }, function (dataUrl) {
-            sendResponse({ imgSrc: dataUrl });
+    if (info.menuItemId === 'arenaSnip') {
+        chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ["js/snip.js"]
         });
     }
-    return true;
 });
 
 chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
-    if (req.message === "crop") {
-        screenshotUrl = req.img
+    if (req.message === 'startCrop') {
+        (async () => {
+            const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 100 });
+            cropData = { imgSrc: dataUrl, rect: req.rect };
+            await chrome.action.openPopup();
+        })();
+        return true; 
     }
-    return true;
+    if (req.message === 'getCropData') {
+        sendResponse(cropData);
+        cropData = null;
+    }
 });
-
