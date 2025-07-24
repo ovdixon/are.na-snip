@@ -4,15 +4,14 @@ let selectedChannels = new Set();
 let block;
 
 
-// On Load
 document.addEventListener('DOMContentLoaded', async function () {
 
     const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true })
     block = { type: 'link', source: tab.url };
 
     chrome.runtime.sendMessage({ message: 'getCropData' }, async (response) => {
-        if (response && response.imgSrc && response.rect) {
-            const croppedUrl = await cropImage(response.imgSrc, response.rect);
+        if (response && response.imgSrc && response.rect && response.scale) {
+            const croppedUrl = await cropImage(response.imgSrc, response.rect, response.scale);
             block = { type: 'image-crop', source: croppedUrl };
             document.getElementById("start-snip").style.display = "none";
             document.getElementById("image-preview").style.display = "block";
@@ -137,18 +136,13 @@ document.getElementById('logout').addEventListener('click', async () => {
 
 });
 
-
-
-// functions
-
-function cropImage(img, rect) {
+function cropImage(img, rect, scale) {
     return new Promise((resolve, reject) => {
         const image = new Image();
         image.src = img;
         image.onload = function () {
             const canvas = document.createElement("canvas");
-            const scale = window.devicePixelRatio;
-
+            console.log(rect, scale)
             canvas.width = rect.width * scale;
             canvas.height = rect.height * scale;
             const ctx = canvas.getContext("2d");

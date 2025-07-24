@@ -21,7 +21,7 @@ chrome.runtime.onMessage.addListener((req, sender, sendResponse) => {
     if (req.message === 'startCrop') {
         (async () => {
             const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'jpeg', quality: 100 });
-            cropData = { imgSrc: dataUrl, rect: req.rect };
+            cropData = { imgSrc: dataUrl, rect: req.rect, scale: req.scale };
             await chrome.action.openPopup();
         })();
         return true; 

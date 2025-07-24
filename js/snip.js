@@ -59,7 +59,11 @@ function initSnip() {
         isDragging = false;
         document.removeEventListener('mousemove', handleMouseMove);
         cleanupAfterSnip();
-        chrome.runtime.sendMessage({ message: 'startCrop', rect: snipRect });
+        chrome.runtime.sendMessage({
+            message: 'startCrop',
+            rect: snipRect,
+            scale: window.devicePixelRatio
+        });
     }
 
     function cleanupAfterSnip() {
