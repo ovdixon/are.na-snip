@@ -5,6 +5,9 @@
 
 This Chrome extension, built with Manifest V3, includes screenshot snipping features that expand upon the official Are.na browser extension.
 
+![demo](./gif/demo.gif)
+
+
 ## Image Handling
 
 Due to limitations in the official Are.na API (which doesn't support direct image uploads or posting), this extension uses a workaround via Cloudflare Workers and R2 storage. Images uploaded through this process are temporary, thanks to an object lifecycle policy on the R2 bucket that automatically deletes them after a set time.
